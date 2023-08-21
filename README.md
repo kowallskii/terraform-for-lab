@@ -99,3 +99,149 @@ Note: Only works on btech lab
 - IFACE_NETWORKn: Network Address used by guest
 - IFACE_IPn: IP Address used by guest
 - CONSOLE: spice | vnc. Select console
+
+# TUTOR GAMPANG
+1. Install  "Virtualization Host" KVM
+
+```jsx
+sudo apt -y install bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu qemu-kvm qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils mkisofs gawk
+```
+
+1. Enable nested virtualization kernel module
+
+```jsx
+sudo modprobe -r kvm_intel
+sudo modprobe kvm_intel nested=1
+cat <<EOF >> /etc/modprobe.d/kvm.conf
+options kvm-intel nested=1
+EOF
+
+sudo modprobe -r kvm_amd
+sudo modprobe kvm_amd nested=1
+cat <<EOF >> /etc/modprobe.d/kvm.conf
+options kvm_amd nested=1
+EOF
+```
+
+1. Start and enable libvirt
+
+```jsx
+systemctl enable --now libvirtd
+```
+
+1. Setup Terraform
+
+```jsx
+wget https://releases.hashicorp.com/terraform/0.13.7/terraform_0.13.7_linux_amd64.zip
+apt install unzip -y
+unzip terraform_0.13.7_linux_amd64.zip
+mv terraform /usr/local/bin
+terraform -v
+```
+
+1. Download tfgen
+
+```jsx
+git clone https://go.btech.id/arya/tfgen.git
+atau
+git clone https://github.com/anggakg/tfgen.git
+sed -i -r 's/machine=*/machine="pc-i440fx-focal"/' tfgen/functionlib/gentemplate.sh
+sed -i -r 's/machine=*/machine="pc-i440fx-jammy-hpb"/' tfgen/functionlib/gentemplate.sh
+```
+
+1. Setup libvirt provider
+
+```jsx
+mkdir -p ~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.2/linux_amd64
+mv tfgen/provider/terraform-provider-libvirt ~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.2/linux_amd64
+```
+
+1. buat file xml
+
+```jsx
+<network>
+<name>net-10.10.10</name>
+<forward mode='route'/>
+<bridge name='virbr10' stp='on' delay='0'/>
+<domain name='network'/>
+<ip address='10.10.10.1' netmask='255.255.255.0'>
+</ip>
+</network>
+
+virsh net-define network.xml
+virsh net-start net-10.10.10
+virsh net-autostart net-10.10.10
+```
+
+1. Buat Network
+
+```jsx
+for i in {236..239}; do virsh net-define 172.18.$i.xml && virsh net-autostart net-172.18.$i && virsh net-start net-172.18.$i; done
+```
+
+1. Setup storage pool
+
+```jsx
+mkdir -p /data/isos
+mkdir /data/vms
+virsh pool-define-as vms dir - - - - "/data/vms"
+virsh pool-define-as isos dir - - - - "/data/isos"
+virsh pool-autostart vms
+virsh pool-autostart isos
+virsh pool-start vms
+virsh pool-start isos
+
+#Update list isos
+cd /data/isos
+wget https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img
+wget https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img
+wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+mv focal-server-cloudimg-amd64.img ubuntu-focal.img
+mv bionic-server-cloudimg-amd64.img ubuntu-bionic.img
+mv jammy-server-cloudimg-amd64.img ubuntu-jammy.img
+virsh pool-refresh isos
+virsh vol-list isos
+```
+
+1. Fix error qemu
+
+```jsx
+sed -i -r 's/#security_driver.*/security_driver = "none"/' /etc/libvirt/qemu.conf
+systemctl restart libvirtd
+```
+
+1. Add rule iptables
+
+```jsx
+sudo iptables -t nat -A POSTROUTING -j MASQUERADE -o ens4
+
+#Add persistent iptables nat
+echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections
+echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections
+sudo apt-get install iptables-persistent -y
+```
+
+1. Create password cloud img (optional)
+
+```jsx
+sudo apt install libguestfs-tools
+virt-customize -a bionic-server-cloudimg-amd64.img --root-password password:<pass>
+```
+
+Example :
+
+```jsx
+[LAB]
+PUBKEY1: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQChfYC+4sq44qaZgQtQUQa7PohBNmgBhx71H4pRYjaTYeaj9nP5aLeaQYi/QBZDV4AHJveLA90KKvycUqju9uWWxLTjLHP5oNTHG+5BWAbvTsk+HDiDa3MeoakjiGD5CLDpBC92UYlumh/VOiMyGvrjY8HjQWQbFepfcGsLZbzza8ekX5tC/TipCM+MBBXkqjhOOZYciOvhU53kdxb4BDtlueE3U56MtCtgnQYWoZRocosw3Z0ZOtE8YeaI38fchblUfHRY8ZXXVq5Ta/mWSMTmZsyXqspw9zckvrDtvL4FyXDs3BvxPcFbSMKEMBmxdKOusuLwLnM7P+bMAil+kppE9K7pie4qdvziYe/LPJjmciqKdyjN242VsYRpRgQfej3qJKyT1PgMj9N2ts2tthkf0LsZZe1gm+4YhLnEEa/MZv5jZVrNuqBUZixkywzJQUt6oemIKg7a2vPHGgxd1p6KbLIiQo7iTPWT+PFAAS1nbMlmwuA5YCYdn7xX3DzqCeU= root@maas-2
+
+[VM1]
+NAME: ops
+OS: ubuntu-bionic.img
+NESTED: y
+VCPUS: 8
+MEMORY: 16G
+DISK1: 100G
+IFACE_NETWORK1: 10.10.10.0
+IFACE_IP1: 10.10.10.10
+CONSOLE: vnc
+```
