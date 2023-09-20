@@ -115,3 +115,21 @@ IFACE_IP1: 10.10.10.10
 CONSOLE: vnc
 ```
 > Tinggal Sesuaikan saja pubkey nya pakai pubkey baremetal
+
+### How to 
+Create Volume qemu
+```bash
+./not-tfgen.sh example example.txt
+```
+Init KVM
+```bash
+terraform init example/
+```
+Create KVM
+```bash
+terraform apply example/
+```
+Verify KVM Running
+```bash
+virsh list
+```
