@@ -38,6 +38,13 @@ Atau sesuaikan dengan os kalian yang di bagian sini , contoh di atas saya pake u
 
 ![image](https://github.com/maulanamalikjb147/terraform-for-lab/assets/108875877/6dcc33ad-c6a0-4495-b9fa-f449852475dc)
 
+
+Setup libvirt provider
+```
+mkdir -p ~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.2/linux_amd64
+mv terraform-for-lab/provider/terraform-provider-libvirt ~/.local/share/terraform/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.2/linux_amd64
+```
+
 buat file xml untuk network
  ```bash
 nano net-10-10-10.xml
