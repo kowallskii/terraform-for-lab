@@ -32,7 +32,7 @@ terraform -v
 Download Tfgen
 ```bash
 git clone https://github.com/maulanamalikjb147/terraform-for-lab.git
-sed -i -r 's/machine=*/machine="pc-i440fx-focal"/' tfgen/functionlib/gentemplate.sh
+sed -i -r 's/machine=*/machine="pc-i440fx-focal"/' terraform-for-lab/functionlib/gentemplate.sh
 ```
 Atau sesuaikan dengan os kalian yang di bagian sini , contoh di atas saya pake ubuntu focal . kalo untuk jammy ini ```pc-i440fx-jammy-hpb```
 
