@@ -3,7 +3,7 @@ Install  "Virtualization Host" KVM
 ```bash
 sudo apt -y install bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu qemu-kvm qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils mkisofs gawk
 ```
-Enable nested virtualization kernel module
+Enable nested virtualization kernel module << ini bisa di ignore jika gagal
 ```bash
 sudo modprobe -r kvm_intel
 sudo modprobe kvm_intel nested=1
